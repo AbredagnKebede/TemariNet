@@ -1,0 +1,17 @@
+{
+    "extends": "@student-net/config/typescript-preset",
+    "compilerOptions": {
+      "baseUrl": ".",
+      "paths": {
+        "@/*": ["./src/*"]
+      },
+      "plugins": [
+        {
+          "name": "next"
+        }
+      ],
+      "strictNullChecks": true
+    },
+    "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+    "exclude": ["node_modules"]
+  }
