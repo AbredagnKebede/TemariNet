@@ -10,6 +10,7 @@
       "clean": "rm -rf .next"
     },
     "dependencies": {
+      "@clerk/nextjs": "^4.29.2",
       "@student-net/ui": "workspace:*",
       "@student-net/utils": "workspace:*",
       "@student-net/validation": "workspace:*",
