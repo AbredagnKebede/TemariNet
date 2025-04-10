@@ -1,0 +1,5 @@
+{
+    "extends": "@student-net/config/typescript-preset",
+    "include": ["src"],
+    "exclude": ["node_modules", "dist"]
+  }
