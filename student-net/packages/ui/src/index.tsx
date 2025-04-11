@@ -4,6 +4,8 @@ import { cn } from './utils';
 
 // Export utilities
 export * from './utils';
+export * from './auth-components';
+export * from './utils';
 
 // Button component
 const buttonVariants = cva(

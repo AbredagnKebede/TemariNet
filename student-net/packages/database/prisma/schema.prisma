@@ -7,12 +7,220 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Schema will be expanded in the next steps
+// User model
 model User {
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  email         String    @unique
+  emailVerified DateTime?
+  name          String
+  image         String?
+  bio           String?   @db.Text
+  year          Int?
+  university    String?
+  department    String?
+  skills        String[]
+  isApproved    Boolean   @default(false)
+  role          Role      @default(USER)
+  clerkId       String?   @unique
+  
+  // Relations
+  posts         Post[]
+  comments      Comment[]
+  groups        GroupMember[]
+  files         File[]
+  receivedConnections Connection[] @relation("receiver")
+  sentConnections     Connection[] @relation("sender")
+  sentMessages        Message[]    @relation("sender")
+  receivedMessages    Message[]    @relation("receiver")
+  notifications       Notification[]
+}
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+// Post model
+model Post {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  title     String
+  content   String   @db.Text
+  visibility Visibility @default(PUBLIC)
+  
+  // Relations
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  comments  Comment[]
+  likes     Like[]
+  group     Group?   @relation(fields: [groupId], references: [id])
+  groupId   String?
+  files     File[]
+}
+
+enum Visibility {
+  PUBLIC
+  UNIVERSITY
+  DEPARTMENT
+  PRIVATE
+}
+
+// Comment model
+model Comment {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  content   String   @db.Text
+  
+  // Relations
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  parent    Comment? @relation("CommentToComment", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId  String?
+  replies   Comment[] @relation("CommentToComment")
+  likes     Like[]
+}
+
+// Like model (for posts and comments)
+model Like {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId String?
+
+  @@unique([userId, postId, commentId])
+}
+
+// Group model
+model Group {
   id          String   @id @default(cuid())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  email       String   @unique
   name        String
-  isApproved  Boolean  @default(false)
+  description String?  @db.Text
+  image       String?
+  type        GroupType @default(PUBLIC)
+  category    String?
+  
+  // Relations
+  members     GroupMember[]
+  posts       Post[]
+}
+
+enum GroupType {
+  PUBLIC
+  PRIVATE
+}
+
+// Group member model
+model GroupMember {
+  id        String     @id @default(cuid())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  role      GroupRole  @default(MEMBER)
+  
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  group     Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+
+  @@unique([userId, groupId])
+}
+
+enum GroupRole {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
+// Connection model (similar to LinkedIn connections)
+model Connection {
+  id        String     @id @default(cuid())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  status    ConnectionStatus
+  
+  // Relations
+  sender    User       @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId  String
+  receiver  User       @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId String
+
+  @@unique([senderId, receiverId])
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+// Message model
+model Message {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  content   String   @db.Text
+  read      Boolean  @default(false)
+  
+  // Relations
+  sender    User     @relation("sender", fields: [senderId], references: [id])
+  senderId  String
+  receiver  User     @relation("receiver", fields: [receiverId], references: [id])
+  receiverId String
+}
+
+// File model
+model File {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  name      String
+  url       String
+  size      Int
+  type      String
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String?
+}
+
+// Notification model
+model Notification {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  type      NotificationType
+  read      Boolean  @default(false)
+  title     String
+  content   String
+  link      String?
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+}
+
+enum NotificationType {
+  CONNECTION_REQUEST
+  CONNECTION_ACCEPTED
+  POST_LIKE
+  COMMENT
+  COMMENT_LIKE
+  GROUP_INVITE
+  SYSTEM_MESSAGE
+  POST_MENTION
+  COMMENT_MENTION
 }
